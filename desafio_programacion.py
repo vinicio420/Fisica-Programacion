@@ -10,11 +10,8 @@ st.set_page_config(page_title="Simulador de Impulso y Momentum", page_icon="⚡"
 # Título principal
 st.title("⚛️ Desafío de Programación Física II")
 st.subheader("Integrantes: Erik Alqui, Marco Muñoz, Ariel Santana")
-st.subheader("Grupo: M ")
-st.subheader("Semestre: Segundo B")
-st.subheader("Docente: Ing Diego Nuñez")
 
-# Sidebar para navegación
+# Sidebar para navegación y parámetros
 st.sidebar.title("📚 Menú de Simulaciones")
 simulacion = st.sidebar.selectbox(
     "Selecciona una simulación:",
@@ -225,14 +222,14 @@ def crear_animacion_objetos_plotly(m1, m2, v1i, v2i, e):
                 go.Scatter(
                     x=[x1], y=[0],
                     mode='markers',
-                    marker=dict(size=20*np.sqrt(m1), color='blue'),
+                    marker=dict(size=30, color='blue'),
                     name=f'Objeto 1 (m={m1}kg)',
                     hovertemplate=f'Objeto 1<br>Posición: {x1:.2f}m<br>Tiempo: {tiempo:.2f}s<extra></extra>'
                 ),
                 go.Scatter(
                     x=[x2], y=[0],
                     mode='markers',
-                    marker=dict(size=20*np.sqrt(m2), color='red'),
+                    marker=dict(size=30, color='red'),
                     name=f'Objeto 2 (m={m2}kg)',
                     hovertemplate=f'Objeto 2<br>Posición: {x2:.2f}m<br>Tiempo: {tiempo:.2f}s<extra></extra>'
                 )
@@ -246,13 +243,13 @@ def crear_animacion_objetos_plotly(m1, m2, v1i, v2i, e):
             go.Scatter(
                 x=[x1_inicial], y=[0],
                 mode='markers',
-                marker=dict(size=20*np.sqrt(m1), color='blue'),
+                marker=dict(size=30, color='blue'),
                 name=f'Objeto 1 (m={m1}kg)'
             ),
             go.Scatter(
                 x=[x2_inicial], y=[0],
                 mode='markers',
-                marker=dict(size=20*np.sqrt(m2), color='red'),
+                marker=dict(size=30, color='red'),
                 name=f'Objeto 2 (m={m2}kg)'
             )
         ],
@@ -303,7 +300,27 @@ def crear_animacion_objetos_plotly(m1, m2, v1i, v2i, e):
 if simulacion == "Colisión 1D - Elástica e Inelástica":
     st.header("🔵 Colisión 1D - Elástica e Inelástica")
     
-    # Explicación física completa
+    # PARÁMETROS EN EL SIDEBAR
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("⚙️ Parámetros de Entrada")
+    m1 = st.sidebar.number_input("Masa del objeto 1 (kg)", value=2.0, min_value=0.1)
+    m2 = st.sidebar.number_input("Masa del objeto 2 (kg)", value=1.0, min_value=0.1)
+    v1i = st.sidebar.number_input("Velocidad inicial objeto 1 (m/s)", value=5.0)
+    v2i = st.sidebar.number_input("Velocidad inicial objeto 2 (m/s)", value=-2.0)
+    
+    tipo_colision = st.sidebar.selectbox("Tipo de colisión:", ["Elástica", "Inelástica", "Perfectamente Inelástica"])
+    
+    if tipo_colision == "Elástica":
+        e = 1.0
+        st.sidebar.info("🔵 **Colisión Elástica:** Se conserva la energía cinética total")
+    elif tipo_colision == "Perfectamente Inelástica":
+        e = 0.0
+        st.sidebar.warning("🟡 **Colisión Perfectamente Inelástica:** Los objetos se quedan unidos")
+    else:
+        e = st.sidebar.slider("Coeficiente de restitución (e)", 0.0, 1.0, 0.5)
+        st.sidebar.info(f"🟠 **Colisión Inelástica:** e = {e:.2f} - Se pierde energía cinética")
+    
+    # 1. EXPLICACIÓN FÍSICA
     with st.expander("📚 Explicación Física - Colisiones 1D", expanded=True):
         st.markdown("""
         ### 🔬 Fundamentos Teóricos
@@ -341,139 +358,105 @@ if simulacion == "Colisión 1D - Elástica e Inelástica":
         - **Deformación:** En colisiones inelásticas, parte de la energía se disipa como calor, sonido o deformación
         """)
     
-    col1, col2 = st.columns(2)
+    # Calcular resultados una vez para usar en todas las secciones
+    v1f, v2f = colision_1d(m1, m2, v1i, v2i, e)
     
-    with col1:
-        st.subheader("Parámetros de Entrada")
-        m1 = st.number_input("Masa del objeto 1 (kg)", value=2.0, min_value=0.1)
-        m2 = st.number_input("Masa del objeto 2 (kg)", value=1.0, min_value=0.1)
-        v1i = st.number_input("Velocidad inicial objeto 1 (m/s)", value=5.0)
-        v2i = st.number_input("Velocidad inicial objeto 2 (m/s)", value=-2.0)
-        
-        tipo_colision = st.selectbox("Tipo de colisión:", ["Elástica", "Inelástica", "Perfectamente Inelástica"])
-        
-        if tipo_colision == "Elástica":
-            e = 1.0
-            st.info("🔵 **Colisión Elástica:** Se conserva la energía cinética total")
-        elif tipo_colision == "Perfectamente Inelástica":
-            e = 0.0
-            st.warning("🟡 **Colisión Perfectamente Inelástica:** Los objetos se quedan unidos")
-        else:
-            e = st.slider("Coeficiente de restitución (e)", 0.0, 1.0, 0.5)
-            st.info(f"🟠 **Colisión Inelástica:** e = {e:.2f} - Se pierde energía cinética")
+    # Calcular información de la colisión
+    x1_inicial = -2.0
+    x2_inicial = 2.0
+    t_colision, x_colision = calcular_colision(x1_inicial, x2_inicial, v1i, v2i)
     
-    with col2:
-        st.subheader("Resultados")
-        v1f, v2f = colision_1d(m1, m2, v1i, v2i, e)
-        
-        # Calcular información de la colisión
-        x1_inicial = -2.0
-        x2_inicial = 2.0
-        t_colision, x_colision = calcular_colision(x1_inicial, x2_inicial, v1i, v2i)
-        
-        # Momentum antes y después
-        p_inicial = m1 * v1i + m2 * v2i
-        p_final = m1 * v1f + m2 * v2f
-        
-        # Energía cinética antes y después
-        ke_inicial = 0.5 * m1 * v1i**2 + 0.5 * m2 * v2i**2
-        ke_final = 0.5 * m1 * v1f**2 + 0.5 * m2 * v2f**2
-        
-        # Energía cinética antes y después (del sistema)
-        ke_inicial_sistema = 0.5 * m1 * v1i**2 + 0.5 * m2 * v2i**2
-        ke_final_sistema = 0.5 * m1 * v1f**2 + 0.5 * m2 * v2f**2
-        
-        # Momentum antes y después
-        p_inicial = m1 * v1i + m2 * v2i
-        p_final = m1 * v1f + m2 * v2f
-
-        # Energía cinética antes y después
-        ke_inicial = 0.5 * m1 * v1i**2 + 0.5 * m2 * v2i**2
-        ke_final = 0.5 * m1 * v1f**2 + 0.5 * m2 * v2f**2
-
-        # --- CÁLCULO DEL CAMBIO EN CANTIDAD DE MOVIMIENTO (IMPULSO) ---
-        delta_p1 = m1 * v1f - m1 * v1i
-        delta_p2 = m2 * v2f - m2 * v2i
-        # -------------------------------------------------------------
-        
-        # --- CÁLCULO DE ENERGÍA CINÉTICA INDIVIDUAL Y SU CAMBIO ---
-        # Energía cinética individual inicial
-        ke1_inicial = 0.5 * m1 * v1i**2
-        ke2_inicial = 0.5 * m2 * v2i**2
-
-        # Energía cinética individual final
-        ke1_final = 0.5 * m1 * v1f**2
-        ke2_final = 0.5 * m2 * v2f**2
-
-        # Cambio en la energía cinética para cada partícula
-        delta_ke1 = ke1_final - ke1_inicial
-        delta_ke2 = ke2_final - ke2_inicial
-        # ---------------------------------------------------------
-        
-        # Mostrar información de la colisión
+    # 2. ANIMACIÓN DE LA COLISIÓN
+    st.subheader("🎬 Animación de la Colisión")
+    fig_animation = crear_animacion_objetos_plotly(m1, m2, v1i, v2i, e)
+    st.plotly_chart(fig_animation, use_container_width=True)
+    
+    # 3. ANÁLISIS GRÁFICO
+    st.subheader("📊 Análisis Gráfico")
+    fig_analysis = crear_visualizacion_1d_plotly(m1, m2, v1i, v2i, e)
+    st.plotly_chart(fig_analysis, use_container_width=True)
+    
+    # 4. RESULTADOS
+    st.subheader("📈 Resultados de la Simulación")
+    
+    # Información de la colisión
+    col_info1, col_info2 = st.columns(2)
+    with col_info1:
         if t_colision is not None:
-            st.success(f"⏱️ **Colisión en:** t = {t_colision:.2f} s, x = {x_colision:.2f} m")
+            st.success(f"⏱️ **Colisión en:** t = {t_colision:.2f} s")
         else:
             st.warning("⚠️ **No hay colisión** con estas velocidades")
-        
-        # Mostrar resultados con formato mejorado
+    
+    with col_info2:
+        if x_colision is not None:
+            st.success(f"📍 **Posición de colisión:** x = {x_colision:.2f} m")
+    
+    # Velocidades finales
+    col_vel1, col_vel2 = st.columns(2)
+    with col_vel1:
         st.metric("Velocidad final objeto 1", f"{v1f:.2f} m/s", f"{v1f - v1i:.2f} m/s")
+    with col_vel2:
         st.metric("Velocidad final objeto 2", f"{v2f:.2f} m/s", f"{v2f - v2i:.2f} m/s")
-        
-        col2a, col2b = st.columns(2)
-        with col2a:
-            st.metric("Momento inicial (Sistema)", f"{p_inicial:.2f} kg⋅m/s")
-            st.metric("Momento final (Sistema)", f"{p_final:.2f} kg⋅m/s")
-        with col2b:
-            st.metric("Energía Cinetica inicial (Sistema)", f"{ke_inicial_sistema:.2f} J")   # ¡Asegúrate de tener esta línea!
-            st.metric("Energía Cinetica final (Sistema)", f"{ke_final_sistema:.2f} J")
-            
-              # --- NUEVA SECCIÓN PARA IMPULSO ---
-        st.subheader("Cambio en Cantidad de Movimiento (Para cada particula) 💥")
-        col_delta_p1, col_delta_p2 = st.columns(2)
-        with col_delta_p1:
-            st.metric("Objeto 1 ($\Delta p_1$)", f"{delta_p1:.2f} kg⋅m/s")
-        with col_delta_p2:
-            st.metric("Objeto 2 ($\Delta p_2$)", f"{delta_p2:.2f} kg⋅m/s")
-        
-        # --- NUEVA SECCIÓN PARA CAMBIO EN ENERGÍA CINÉTICA POR PARTÍCULA ---
-        st.subheader("Cambio en Energía Cinética (Para cada particula) ⚡")
-        col_delta_ke1, col_delta_ke2 = st.columns(2)
-        with col_delta_ke1:
-            st.metric("Objeto 1 ($\Delta KE_1$)", f"{delta_ke1:.2f} J")
-        with col_delta_ke2:
-            st.metric("Objeto 2 ($\Delta KE_2$)", f"{delta_ke2:.2f} J")
-        
+    
+    # Cálculos para conservación
+    p_inicial = m1 * v1i + m2 * v2i
+    p_final = m1 * v1f + m2 * v2f
+    ke_inicial = 0.5 * m1 * v1i**2 + 0.5 * m2 * v2i**2
+    ke_final = 0.5 * m1 * v1f**2 + 0.5 * m2 * v2f**2
+    
+    # Momentum y energía del sistema
+    st.subheader("⚖️ Conservación del Sistema")
+    col_mom, col_energy = st.columns(2)
+    with col_mom:
+        st.metric("Momento inicial (Sistema)", f"{p_inicial:.2f} kg⋅m/s")
+        st.metric("Momento final (Sistema)", f"{p_final:.2f} kg⋅m/s")
+    with col_energy:
+        st.metric("Energía Cinética inicial (Sistema)", f"{ke_inicial:.2f} J")   
+        st.metric("Energía Cinética final (Sistema)", f"{ke_final:.2f} J")
+    
+    # Cambio en cantidad de movimiento por partícula
+    delta_p1 = m1 * v1f - m1 * v1i
+    delta_p2 = m2 * v2f - m2 * v2i
+    
+    st.subheader("💥 Cambio en Cantidad de Movimiento (Por Partícula)")
+    col_delta_p1, col_delta_p2 = st.columns(2)
+    with col_delta_p1:
+        st.metric("Objeto 1 (Δp₁)", f"{delta_p1:.2f} kg⋅m/s")
+    with col_delta_p2:
+        st.metric("Objeto 2 (Δp₂)", f"{delta_p2:.2f} kg⋅m/s")
+    
+    # Cambio en energía cinética por partícula
+    ke1_inicial = 0.5 * m1 * v1i**2
+    ke2_inicial = 0.5 * m2 * v2i**2
+    ke1_final = 0.5 * m1 * v1f**2
+    ke2_final = 0.5 * m2 * v2f**2
+    delta_ke1 = ke1_final - ke1_inicial
+    delta_ke2 = ke2_final - ke2_inicial
+    
+    st.subheader("⚡ Cambio en Energía Cinética (Por Partícula)")
+    col_delta_ke1, col_delta_ke2 = st.columns(2)
+    with col_delta_ke1:
+        st.metric("Objeto 1 (ΔKE₁)", f"{delta_ke1:.2f} J")
+    with col_delta_ke2:
+        st.metric("Objeto 2 (ΔKE₂)", f"{delta_ke2:.2f} J")
 
-        # Verificaciones
-        conservacion_momentum = abs(p_inicial - p_final) < 0.01
-        energia_perdida = ke_inicial - ke_final
-        
-        # Verificaciones
-        conservacion_momentum = abs(p_inicial - p_final) < 0.01
-        energia_perdida = ke_inicial - ke_final
-        
+    # Verificaciones finales
+    st.subheader("✅ Verificacion de Leyes Fisicas")
+    conservacion_momentum = abs(p_inicial - p_final) < 0.01
+    energia_perdida = ke_inicial - ke_final
+    
+    col_check1, col_check2 = st.columns(2)
+    with col_check1:
         if conservacion_momentum:
             st.success("✅ **Momentum conservado**")
         else:
             st.error("❌ **Error en conservación del momentum**")
-        
+    
+    with col_check2:
         if energia_perdida > 0.01:
             st.warning(f"⚠️ **Energía perdida:** {energia_perdida:.2f} J ({(energia_perdida/ke_inicial)*100:.1f}%)")
         elif abs(energia_perdida) < 0.01:
             st.success("✅ **Energía cinética conservada**")
-    
-    # Mostrar gráficos interactivos con Plotly
-    st.subheader("📊 Análisis Gráfico")
-    
-    # Gráficos de posición y velocidad vs tiempo
-    fig_analysis = crear_visualizacion_1d_plotly(m1, m2, v1i, v2i, e)
-    st.plotly_chart(fig_analysis, use_container_width=True)
-    
-    # Animación de los objetos
-    st.subheader("🎬 Animación de la Colisión")
-    fig_animation = crear_animacion_objetos_plotly(m1, m2, v1i, v2i, e)
-    st.plotly_chart(fig_animation, use_container_width=True)
     
     # Análisis detallado
     with st.expander("🔍 Análisis Detallado de Resultados"):
@@ -509,7 +492,7 @@ if simulacion == "Colisión 1D - Elástica e Inelástica":
         """)
 
 # ======================================================================
-# FUNCIONES FÍSICAS COMUNES (ACTUALIZADAS)
+# COLISION 2D INICIO (ACTUALIZADAS)
 # ======================================================================
 def colision_1d(m1, m2, v1i, v2i, e=1):
     """Calcula las velocidades finales en colisión 1D."""
@@ -551,18 +534,87 @@ def calcular_colision(x1, y1, x2, y2, v1x, v1y, v2x, v2y, radio1, radio2):
     
     return t, x_col, y_col
 
+def calcular_angulos_post_colision(v1x_f, v1y_f, v2x_f, v2y_f):
+    """Calcula los ángulos de las velocidades finales respecto al eje X."""
+    angulo1 = np.degrees(np.arctan2(v1y_f, v1x_f))
+    angulo2 = np.degrees(np.arctan2(v2y_f, v2x_f))
+    return angulo1, angulo2
+
+# ======================================================================
+# FUNCIÓN PARA CREAR TABLA DE RESULTADOS
+# ======================================================================
+def crear_tabla_resultados(m1, m2, v1x, v1y, v2x, v2y, v1x_f, v1y_f, v2x_f, v2y_f, e):
+    """Crea una tabla estilizada con los resultados del análisis de choque."""
+    
+    # Cálculos para ANTES del choque
+    v1_mag_inicial = np.sqrt(v1x**2 + v1y**2)
+    v2_mag_inicial = np.sqrt(v2x**2 + v2y**2)
+    ke1_inicial = 0.5 * m1 * v1_mag_inicial**2
+    ke2_inicial = 0.5 * m2 * v2_mag_inicial**2
+    ke_total_inicial = ke1_inicial + ke2_inicial
+    
+    p1_inicial = m1 * v1_mag_inicial
+    p2_inicial = m2 * v2_mag_inicial
+    p_total_inicial = m1 * np.array([v1x, v1y]) + m2 * np.array([v2x, v2y])
+    p_total_mag_inicial = np.linalg.norm(p_total_inicial)
+    
+    # Cálculos para DESPUÉS del choque
+    v1_mag_final = np.sqrt(v1x_f**2 + v1y_f**2)
+    v2_mag_final = np.sqrt(v2x_f**2 + v2y_f**2)
+    ke1_final = 0.5 * m1 * v1_mag_final**2
+    ke2_final = 0.5 * m2 * v2_mag_final**2
+    ke_total_final = ke1_final + ke2_final
+    
+    p1_final = m1 * v1_mag_final
+    p2_final = m2 * v2_mag_final
+    p_total_final = m1 * np.array([v1x_f, v1y_f]) + m2 * np.array([v2x_f, v2y_f])
+    p_total_mag_final = np.linalg.norm(p_total_final)
+    
+    # Crear DataFrame para la tabla
+    datos_tabla = {
+        'Magnitud': [
+            'Energía Cinética (J)',
+            'Cantidad de Movimiento (kg·m/s)'
+        ],
+        'Partícula 1 - ANTES': [
+            f"{ke1_inicial:.3f}",
+            f"{p1_inicial:.3f}"
+        ],
+        'Partícula 2 - ANTES': [
+            f"{ke2_inicial:.3f}",
+            f"{p2_inicial:.3f}"
+        ],
+        'Sistema - ANTES': [
+            f"{ke_total_inicial:.3f}",
+            f"{p_total_mag_inicial:.3f}"
+        ],
+        'Partícula 1 - DESPUÉS': [
+            f"{ke1_final:.3f}",
+            f"{p1_final:.3f}"
+        ],
+        'Partícula 2 - DESPUÉS': [
+            f"{ke2_final:.3f}",
+            f"{p2_final:.3f}"
+        ],
+        'Sistema - DESPUÉS': [
+            f"{ke_total_final:.3f}",
+            f"{p_total_mag_final:.3f}"
+        ]
+    }
+    
+    df = pd.DataFrame(datos_tabla)
+    
+    return df, ke_total_inicial, ke_total_final, p_total_mag_inicial, p_total_mag_final
+
 # ======================================================================
 # FUNCIONES DE VISUALIZACIÓN 2D (ACTUALIZADAS)
 # ======================================================================
-def crear_animacion_2d(m1, m2, v1x, v1y, v2x, v2y, duracion=5, e=1.0):
+def crear_animacion_2d(m1, m2, v1x, v1y, v2x, v2y, duracion=5, e=1.0, x1=0.0, y1=0.5, x2=4.0, y2=-0.5):
     """Crea animación completa 2D con colisiones elásticas/inelásticas."""
     fps = 30
     total_frames = int(fps * duracion)
-    radio1 = 0.3 * np.sqrt(m1)
-    radio2 = 0.3 * np.sqrt(m2)
-    
-    x1, y1 = -3.0, 1.0
-    x2, y2 = 3.0, -1.0
+    radio1 = 0.3 
+    radio2 = 0.3 
     
     t_col, x_col, y_col = calcular_colision(x1, y1, x2, y2, v1x, v1y, v2x, v2y, radio1, radio2)
     
@@ -611,14 +663,14 @@ def crear_animacion_2d(m1, m2, v1x, v1y, v2x, v2y, duracion=5, e=1.0):
             go.Scatter(
                 x=[x1_t], y=[y1_t],
                 mode='markers',
-                marker=dict(size=20*np.sqrt(m1), color='#1f77b4', line=dict(width=2, color='darkblue')),
+                marker=dict(size=20, color="#0a2538", line=dict(width=2, color='darkblue')),
                 name=f'Partícula 1 ({m1} kg)',
                 hovertemplate=f'Masa: {m1} kg<br>Velocidad: {np.sqrt(v1x**2 + v1y**2):.2f} m/s<br>Posición: ({x1_t:.2f}, {y1_t:.2f})'
             ),
             go.Scatter(
                 x=[x2_t], y=[y2_t],
                 mode='markers',
-                marker=dict(size=20*np.sqrt(m2), color='#ff7f0e', line=dict(width=2, color='darkred')),
+                marker=dict(size=20, color='#ff7f0e', line=dict(width=2, color='darkred')),
                 name=f'Partícula 2 ({m2} kg)',
                 hovertemplate=f'Masa: {m2} kg<br>Velocidad: {np.sqrt(v2x**2 + v2y**2):.2f} m/s<br>Posición: ({x2_t:.2f}, {y2_t:.2f})'
             ),
@@ -682,10 +734,64 @@ def crear_animacion_2d(m1, m2, v1x, v1y, v2x, v2y, duracion=5, e=1.0):
     
     return fig
 
-# ======================================================================
-# INTERFAZ DE COLISIÓN 2D (ACTUALIZADA)
-# ======================================================================
+
+
+    # ======================================================================
+    # NUEVA TABLA DE RESULTADOS ESTILIZADA
+    # ======================================================================
+    
+    # Calcular velocidades finales si no se han calculado
+    v1x_f, v1y_f, v2x_f, v2y_f = colision_2d(m1, m2, v1x, v1y, v2x, v2y, e)
+    
+    # Crear y mostrar la tabla de resultados
+    st.markdown("---")
+    st.subheader("📊 TABLA DE RESULTADOS DEL ANÁLISIS DE CHOQUE")
+    
+    df_tabla, ke_inicial, ke_final, p_inicial, p_final = crear_tabla_resultados(
+        m1, m2, v1x, v1y, v2x, v2y, v1x_f, v1y_f, v2x_f, v2y_f, e
+    )
+    
+    # Aplicar estilo personalizado a la tabla
+    def estilizar_tabla(df):
+        return df.style.apply(lambda x: [
+            'background-color: #f8f9fa; font-weight: bold; color: #2c3e50' if i == 0 
+            else 'background-color: #e8f4f8; font-weight: bold; color: #2c3e50' if i == 1
+            else 'background-color: #ffffff'
+            for i in range(len(x))
+        ], axis=0).set_properties(**{
+            'text-align': 'center',
+            'border': '1px solid #dee2e6',
+            'padding': '10px'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [
+                ('background-color', '#343a40'),
+                ('color', 'white'),
+                ('font-weight', 'bold'),
+                ('text-align', 'center'),
+                ('padding', '12px'),
+                ('border', '1px solid #6c757d')
+            ]},
+            {'selector': 'td', 'props': [
+                ('border', '1px solid #dee2e6'),
+                ('padding', '10px')
+            ]}
+        ])
+    
+    # Mostrar la tabla estilizada
+    st.dataframe(
+        estilizar_tabla(df_tabla),
+        use_container_width=True,
+        hide_index=True
+    )
+
+
+## CAMBIO 2: Mover parámetros al sidebar
+
+# BUSCAR esta línea (aproximadamente línea 158):
 if simulacion == "Colisión 2D con Trayectorias":
+
+# Y REEMPLAZAR todo el bloque desde ahí hasta antes de "# Análisis detallado anterior" con:
+
     st.header("🌀 Colisión Bidimensional con Trayectorias")
     
     with st.expander("📚 Teoría de Colisiones 2D", expanded=False):
@@ -702,137 +808,261 @@ if simulacion == "Colisión 2D con Trayectorias":
         - **e = 0**: Colisión perfectamente inelástica (máxima disipación)
         """)
     
-    col1, col2 = st.columns([1, 2])
+    # MOVER PARÁMETROS AL SIDEBAR
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🔧 Parámetros de Simulación")
     
-    with col1:
-        st.subheader("🔧 Parámetros de Simulación")
+    with st.sidebar.container():
+        st.markdown("**⚡ Tipo de Colisión**")
+        tipo_colision = st.selectbox(
+            "Tipo de colisión",
+            ["Elástica (e=1)", "Inelástica (0 ≤ e < 1)"],
+            key="tipo_colision"
+        )
+        if tipo_colision == "Inelástica (0 ≤ e < 1)":
+            e = st.slider("Coeficiente de restitución (e)", 0.0, 0.99, 0.7, 0.05)
+        else:
+            e = 1.0
         
-        with st.container(border=True):
-            st.markdown("**⚡ Tipo de Colisión**")
-            tipo_colision = st.selectbox(
-                "Tipo de colisión",
-                ["Elástica (e=1)", "Inelástica (0 ≤ e < 1)"],
-                key="tipo_colision"
+        st.markdown("**Propiedades de las Partículas**")
+        m1 = st.number_input("Masa 1 (kg)", value=2.0, min_value=0.1, step=0.1, key='2d_m1')
+        m2 = st.number_input("Masa 2 (kg)", value=1.0, min_value=0.1, step=0.1, key='2d_m2')
+        
+        st.markdown("**Posiciones Iniciales**")
+        st.markdown("*Partícula 1*")
+        x1_input = st.number_input("Posición X₁ (m)", value=0.0, step=0.1, key='pos_x1')
+        y1_input = st.number_input("Posición Y₁ (m)", value=0.5, step=0.1, key='pos_y1')
+        st.markdown("*Partícula 2*")
+        x2_input = st.number_input("Posición X₂ (m)", value=4.0, step=0.1, key='pos_x2')
+        y2_input = st.number_input("Posición Y₂ (m)", value=-0.5, step=0.1, key='pos_y2')           
+        
+        st.markdown("**Velocidad Inicial - Partícula 1**")
+        v1x = st.number_input("Componente X (m/s)", value=1.0, key='2d_v1x')
+        v1y = st.number_input("Componente Y (m/s)", value=-0.5, key='2d_v1y')
+        
+        st.markdown("**Velocidad Inicial - Partícula 2**")
+        v2x = st.number_input("Componente X (m/s)", value=-1.0, key='2d_v2x')
+        v2y = st.number_input("Componente Y (m/s)", value=0.5, key='2d_v2y')
+        
+        st.markdown("**⚙️ Configuración de Visualización**")
+        duracion = st.slider("Duración de simulación (s)", 2.0, 10.0, 5.0, 0.5)
+    
+    # AHORA LA ANIMACIÓN OCUPA TODO EL ANCHO
+    st.subheader("🎬 Animación Interactiva")
+    
+    try:
+        fig = crear_animacion_2d(m1, m2, v1x, v1y, v2x, v2y, duracion, e, x1_input, y1_input, x2_input, y2_input)
+        st.plotly_chart(fig, use_container_width=True)
+        # Calcular velocidades finales
+        v1x_f, v1y_f, v2x_f, v2y_f = colision_2d(m1, m2, v1x, v1y, v2x, v2y, e)
+    except Exception as error:
+        st.error(f"Error al crear la animación: {error}")
+        st.info("Verifica que todos los parámetros sean válidos")    
+        # Cálculo de velocidades finales
+        v1x_f, v1y_f, v2x_f, v2y_f = colision_2d(m1, m2, v1x, v1y, v2x, v2y, e)
+        # AGREGAR ESTE CÓDIGO después del try-except de la animación 
+# (aproximadamente después de la línea donde calculas v1x_f, v1y_f, v2x_f, v2y_f)
+
+    # Calcular velocidades finales si no se han calculado
+    v1x_f, v1y_f, v2x_f, v2y_f = colision_2d(m1, m2, v1x, v1y, v2x, v2y, e)
+    
+    # DEFINIR LAS VARIABLES QUE FALTABAN (agregar después del cálculo de velocidades finales)
+    # Cálculos para ANTES del choque
+    v1_mag_inicial = np.sqrt(v1x**2 + v1y**2)
+    v2_mag_inicial = np.sqrt(v2x**2 + v2y**2)
+    ke1_inicial = 0.5 * m1 * v1_mag_inicial**2
+    ke2_inicial = 0.5 * m2 * v2_mag_inicial**2
+    ke_inicial = ke1_inicial + ke2_inicial  # ke_total_inicial
+    
+    p1_inicial = m1 * np.array([v1x, v1y])
+    p2_inicial = m2 * np.array([v2x, v2y])
+    p_total_inicial = p1_inicial + p2_inicial
+    p_inicial = np.linalg.norm(p_total_inicial)  # p_total_mag_inicial
+    
+    # Cálculos para DESPUÉS del choque
+    v1_mag_final = np.sqrt(v1x_f**2 + v1y_f**2)
+    v2_mag_final = np.sqrt(v2x_f**2 + v2y_f**2)
+    ke1_final = 0.5 * m1 * v1_mag_final**2
+    ke2_final = 0.5 * m2 * v2_mag_final**2
+    ke_final = ke1_final + ke2_final  # ke_total_final
+    
+    p1_final = m1 * np.array([v1x_f, v1y_f])
+    p2_final = m2 * np.array([v2x_f, v2y_f])
+    p_total_final = p1_final + p2_final
+    p_final = np.linalg.norm(p_total_final)  # p_total_mag_final
+    
+    # ======================================================================
+    # ANÁLISIS Y VERIFICACIONES
+    # ======================================================================
+    
+    st.markdown("---")
+    with st.container(border=True):
+        st.subheader("🔬 Verificación de Leyes Físicas")
+        
+        col_ley1, col_ley2, col_ley3 = st.columns(3)
+        
+        # Verificación de conservación de momentum
+        with col_ley1:
+            error_momentum = abs(p_final - p_inicial)
+            st.metric(
+                "⚖️ Conservación de Momentum",
+                "✅ SE CONSERVA" if error_momentum < 0.01 else "❌ NO SE CONSERVA",
+                delta=f"Error: {error_momentum:.4f} kg·m/s"
             )
-            if tipo_colision == "Inelástica (0 ≤ e < 1)":
-                e = st.slider("Coeficiente de restitución (e)", 0.0, 0.99, 0.7, 0.05)
-            else:
-                e = 1.0
-            
-            st.markdown("**Propiedades de las Partículas**")
-            m1 = st.number_input("Masa 1 (kg)", value=2.0, min_value=0.1, step=0.1, key='2d_m1')
-            m2 = st.number_input("Masa 2 (kg)", value=1.0, min_value=0.1, step=0.1, key='2d_m2')
-            
-            st.markdown("**Velocidad Inicial - Partícula 1**")
-            v1x = st.number_input("Componente X (m/s)", value=1.0, key='2d_v1x')
-            v1y = st.number_input("Componente Y (m/s)", value=-0.5, key='2d_v1y')
-            
-            st.markdown("**Velocidad Inicial - Partícula 2**")
-            v2x = st.number_input("Componente X (m/s)", value=-1.0, key='2d_v2x')
-            v2y = st.number_input("Componente Y (m/s)", value=0.5, key='2d_v2y')
         
-        with st.container(border=True):
-            st.markdown("**⚙️ Configuración de Visualización**")
-            duracion = st.slider("Duración de simulación (s)", 2.0, 10.0, 5.0, 0.5)
-    
-    with col2:
-        st.subheader("🎬 Animación Interactiva")
+        # Verificación de conservación de energía
+        with col_ley2:
+            if e == 1.0:  # Colisión elástica
+                error_energia = abs(ke_final - ke_inicial)
+                st.metric(
+                    "⚡ Conservación de Energía",
+                    "✅ SE CONSERVA" if error_energia < 0.01 else "❌ NO SE CONSERVA",
+                    delta=f"Error: {error_energia:.4f} J"
+                )
+            else:  # Colisión inelástica
+                energia_perdida = ke_inicial - ke_final
+                porcentaje_perdido = (energia_perdida / ke_inicial) * 100
+                st.metric(
+                    "⚡ Energía Disipada",
+                    f"{energia_perdida:.3f} J",
+                    delta=f"{porcentaje_perdido:.1f}% perdida"
+                )
         
-        try:
-            fig = crear_animacion_2d(m1, m2, v1x, v1y, v2x, v2y, duracion, e)
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Cálculo de velocidades finales
-            v1x_f, v1y_f, v2x_f, v2y_f = colision_2d(m1, m2, v1x, v1y, v2x, v2y, e)
-            
-            # Cálculo de momentos lineales
-            momento_inicial_p1 = m1 * np.array([v1x, v1y])
-            momento_inicial_p2 = m2 * np.array([v2x, v2y])
-            momento_final_p1 = m1 * np.array([v1x_f, v1y_f])
-            momento_final_p2 = m2 * np.array([v2x_f, v2y_f])
+        # Información del tipo de choque
+        with col_ley3:
+            st.metric(
+                "🎯 Tipo de Choque",
+                "Elástica" if e == 1.0 else "Inelástica",
+                delta=f"e = {e}"
+            )
+    
+    # ======================================================================
+    # ANÁLISIS DETALLADO ANTERIOR (MANTENIDO)
+    # ======================================================================
+    
+    # Calcular ángulos post-colisión
+    angulo1, angulo2 = calcular_angulos_post_colision(v1x_f, v1y_f, v2x_f, v2y_f)
+    
+    # Cálculo de momentos lineales
+    momento_inicial_p1 = m1 * np.array([v1x, v1y])
+    momento_inicial_p2 = m2 * np.array([v2x, v2y])
+    momento_final_p1 = m1 * np.array([v1x_f, v1y_f])
+    momento_final_p2 = m2 * np.array([v2x_f, v2y_f])
 
-            # Cálculo de energías cinéticas
-            energia_inicial_p1 = 0.5 * m1 * (v1x**2 + v1y**2)
-            energia_inicial_p2 = 0.5 * m2 * (v2x**2 + v2y**2)
-            energia_final_p1 = 0.5 * m1 * (v1x_f**2 + v1y_f**2)
-            energia_final_p2 = 0.5 * m2 * (v2x_f**2 + v2y_f**2)
+    # Cálculo de energías cinéticas
+    energia_inicial_p1 = 0.5 * m1 * (v1x**2 + v1y**2)
+    energia_inicial_p2 = 0.5 * m2 * (v2x**2 + v2y**2)
+    energia_final_p1 = 0.5 * m1 * (v1x_f**2 + v1y_f**2)
+    energia_final_p2 = 0.5 * m2 * (v2x_f**2 + v2y_f**2)
 
-            # Mostrar resultados en la columna derecha (debajo de la animación)
-            with st.container(border=True):
-                st.subheader("📊 Resultados de la Colisión")
-                
-                # Mostrar solo magnitudes de velocidades
-                st.markdown("**Velocidades Finales (Magnitud)**")
-                col_v1, col_v2 = st.columns(2)
-                with col_v1:
-                    st.metric("Partícula 1", f"{np.sqrt(v1x_f**2 + v1y_f**2):.2f} m/s")
-                with col_v2:
-                    st.metric("Partícula 2", f"{np.sqrt(v2x_f**2 + v2y_f**2):.2f} m/s")
-                
-                st.markdown("**Momento Lineal Final (Magnitud)**")
-                # Calcular el momento lineal total final (suma vectorial de p1_final y p2_final)
-                momento_total_final_x = momento_final_p1[0] + momento_final_p2[0]
-                momento_total_final_y = momento_final_p1[1] + momento_final_p2[1]
-                
-                # Calcular la magnitud del momento lineal total final
-                magnitud_momento_total_final = np.sqrt(momento_total_final_x**2 + momento_total_final_y**2)
-                
-                st.metric("Momento Lineal Total", f"{magnitud_momento_total_final:.2f} kg·m/s")
-
-                st.markdown("**Energía Cinética**")
-                col_ener1, col_ener2 = st.columns(2)
-                with col_ener1:
-                    st.metric("Partícula 1", f"{energia_final_p1:.2f} J", 
-                            delta=f"{energia_final_p1 - energia_inicial_p1:.2f} J")
-                with col_ener2:
-                    st.metric("Partícula 2", f"{energia_final_p2:.2f} J", 
-                            delta=f"{energia_final_p2 - energia_inicial_p2:.2f} J")
-
-                st.metric("Energía Total del Sistema", 
-                        f"{energia_final_p1 + energia_final_p2:.2f} J", 
-                        delta=f"{(energia_final_p1 + energia_final_p2) - (energia_inicial_p1 + energia_inicial_p2):.2f} J")
-                
-        except Exception as e:
-            st.error(f"Error al generar animación: {str(e)}")
+    # Mostrar resultados en la columna derecha (debajo de la animación)
+    with st.container(border=True):
+        st.subheader("📊 Análisis Completo de la Colisión")
         
-    with st.expander("📊 Análisis de Momentum (Magnitudes)", expanded=True):
-     # ---- Cálculos ----
-     v1x_f, v1y_f, v2x_f, v2y_f = colision_2d(m1, m2, v1x, v1y, v2x, v2y, e)
-    
-    # Magnitudes de momentum (antes/después)
-    p1_ini = m1 * np.sqrt(v1x**2 + v1y**2)
-    p2_ini = m2 * np.sqrt(v2x**2 + v2y**2)
-    p1_fin = m1 * np.sqrt(v1x_f**2 + v1y_f**2)
-    p2_fin = m2 * np.sqrt(v2x_f**2 + v2y_f**2)
-    total_ini = p1_ini + p2_ini
-    total_fin = p1_fin + p2_fin
+        # Crear dos columnas principales
+        col_antes, col_despues = st.columns(2)
+        
+        # ============ COLUMNA IZQUIERDA - ANTES DEL CHOQUE ============
+        with col_antes:
+            st.markdown("### 🔵 ANTES del Choque")
+            
+            # Cálculos iniciales
+            v1_mag_inicial = np.sqrt(v1x**2 + v1y**2)
+            v2_mag_inicial = np.sqrt(v2x**2 + v2y**2)
+            
+            # Energía cinética inicial
+            st.markdown("**⚡ Energía Cinética**")
+            ke1_inicial = 0.5 * m1 * v1_mag_inicial**2
+            ke2_inicial = 0.5 * m2 * v2_mag_inicial**2
+            ke_total_inicial = ke1_inicial + ke2_inicial
+            
+            st.metric("Partícula 1", f"{ke1_inicial:.3f} J")
+            st.metric("Partícula 2", f"{ke2_inicial:.3f} J")
+            st.metric("Sistema Total", f"{ke_total_inicial:.3f} J", help="Energía total del sistema")
+            
+            # Cantidad de movimiento inicial
+            st.markdown("**🎯 Cantidad de Movimiento**")
+            p1_inicial = m1 * np.array([v1x, v1y])
+            p2_inicial = m2 * np.array([v2x, v2y])
+            p_total_inicial = p1_inicial + p2_inicial
+            
+            p1_mag_inicial = np.linalg.norm(p1_inicial)
+            p2_mag_inicial = np.linalg.norm(p2_inicial)
+            p_total_mag_inicial = np.linalg.norm(p_total_inicial)
+            
+            st.metric("Partícula 1", f"{p1_mag_inicial:.3f} kg·m/s")
+            st.metric("Partícula 2", f"{p2_mag_inicial:.3f} kg·m/s")
+            st.metric("Sistema Total", f"{p_total_mag_inicial:.3f} kg·m/s")
+            
+            # Velocidades iniciales
+            st.markdown("**🏃 Velocidades**")
+            st.metric("Partícula 1", f"{v1_mag_inicial:.3f} m/s")
+            st.metric("Partícula 2", f"{v2_mag_inicial:.3f} m/s")
+            
+            # Componentes vectoriales (expandible)
+            with st.expander("🔍 Componentes Vectoriales"):
+                st.write("**Velocidades (componentes):**")
+                st.write(f"v₁ = ({v1x:.2f}, {v1y:.2f}) m/s")
+                st.write(f"v₂ = ({v2x:.2f}, {v2y:.2f}) m/s")
+                st.write("**Momentum (componentes):**")
+                st.write(f"p₁ = ({p1_inicial[0]:.2f}, {p1_inicial[1]:.2f}) kg·m/s")
+                st.write(f"p₂ = ({p2_inicial[0]:.2f}, {p2_inicial[1]:.2f}) kg·m/s")
+                st.write(f"p_total = ({p_total_inicial[0]:.2f}, {p_total_inicial[1]:.2f}) kg·m/s")
+        
+        # ============ COLUMNA DERECHA -
+        # ============ COLUMNA DERECHA - DESPUÉS DEL CHOQUE ============
+        with col_despues:
+            st.markdown("### 🟢 DESPUÉS del Choque")
+            
+            # Cálculos finales
+            v1_mag_final = np.sqrt(v1x_f**2 + v1y_f**2)
+            v2_mag_final = np.sqrt(v2x_f**2 + v2y_f**2)
+            
+            # Energía cinética final
+            st.markdown("**⚡ Energía Cinética**")
+            ke1_final = 0.5 * m1 * v1_mag_final**2
+            ke2_final = 0.5 * m2 * v2_mag_final**2
+            ke_total_final = ke1_final + ke2_final
+            
+            st.metric("Partícula 1", f"{ke1_final:.3f} J")
+            st.metric("Partícula 2", f"{ke2_final:.3f} J")
+            st.metric("Sistema Total", f"{ke_total_final:.3f} J", help="Energía total del sistema")
+            
+            # Cantidad de movimiento final
+            st.markdown("**🎯 Cantidad de Movimiento**")
+            p1_final = m1 * np.array([v1x_f, v1y_f])
+            p2_final = m2 * np.array([v2x_f, v2y_f])
+            p_total_final = p1_final + p2_final
+            
+            p1_mag_final = np.linalg.norm(p1_final)
+            p2_mag_final = np.linalg.norm(p2_final)
+            p_total_mag_final = np.linalg.norm(p_total_final)
+            
+            st.metric("Partícula 1", f"{p1_mag_final:.3f} kg·m/s")
+            st.metric("Partícula 2", f"{p2_mag_final:.3f} kg·m/s")
+            st.metric("Sistema Total", f"{p_total_mag_final:.3f} kg·m/s")
+            
+            # Velocidades finales
+            st.markdown("**🏃 Velocidades**")
+            st.metric("Partícula 1", f"{v1_mag_final:.3f} m/s")
+            st.metric("Partícula 2", f"{v2_mag_final:.3f} m/s")
+            
+            # Ángulos de deflexión
+            st.markdown("**📐 Ángulos de Deflexión**")
+            st.metric("Partícula 1", f"{angulo1:.1f}°")
+            st.metric("Partícula 2", f"{angulo2:.1f}°")
+            
+            # Componentes vectoriales (expandible)
+            with st.expander("🔍 Componentes Vectoriales"):
+                st.write("**Velocidades (componentes):**")
+                st.write(f"v₁' = ({v1x_f:.2f}, {v1y_f:.2f}) m/s")
+                st.write(f"v₂' = ({v2x_f:.2f}, {v2y_f:.2f}) m/s")
+                st.write("**Momentum (componentes):**")
+                st.write(f"p₁' = ({p1_final[0]:.2f}, {p1_final[1]:.2f}) kg·m/s")
+                st.write(f"p₂' = ({p2_final[0]:.2f}, {p2_final[1]:.2f}) kg·m/s")
+                st.write(f"p_total' = ({p_total_final[0]:.2f}, {p_total_final[1]:.2f}) kg·m/s")
 
-    # ---- Visualización ----
-    st.subheader("📊 Momentum Lineal (Solo Magnitudes)")
-    
-    # Tabla comparativa
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("**ANTES (kg·m/s)**")
-        st.metric("Partícula 1", f"{p1_ini:.2f}")
-        st.metric("Partícula 2", f"{p2_ini:.2f}")
-        st.metric("TOTAL", f"{total_ini:.2f}", delta="Referencia")
 
-    with col2:
-        st.markdown("**DESPUÉS (kg·m/s)**")
-        st.metric("Partícula 1", f"{p1_fin:.2f}", delta=f"{p1_fin - p1_ini:.2f}")
-        st.metric("Partícula 2", f"{p2_fin:.2f}", delta=f"{p2_fin - p2_ini:.2f}")
-        st.metric("TOTAL", f"{total_fin:.2f}", delta=f"{total_fin - total_ini:.2f}")
-
-    # Barra de progreso para visualizar conservación
-    st.progress(min(1.0, total_fin/total_ini))
-    st.caption(f"Conservación del momentum: {100*total_fin/total_ini:.1f}%")
-
-    # Diagnóstico
-    if np.isclose(total_ini, total_fin, atol=0.01):
-        st.success("✅ El momentum total SE CONSERVA (ley física cumplida)")
-    else:
-        st.error(f"❌ Hay una discrepancia de {abs(total_ini - total_fin):.3f} kg·m/s")
 
 # Simulación de Cálculo de Impulso y Fuerza
 elif simulacion == "Cálculo de Impulso y Fuerza":
@@ -1048,61 +1278,10 @@ elif simulacion == "Cálculo de Impulso y Fuerza":
 elif simulacion == "Péndulo Balístico":
     st.header("🎯 Péndulo Balístico")
     
-    # Explicación física completa
-    with st.expander("📚 Explicación Física - Péndulo Balístico", expanded=True):
-        st.markdown("""
-        ### 🔬 Fundamentos Teóricos - Péndulo Balístico
-        
-        **1. Concepto del Péndulo Balístico:**
-        - Dispositivo usado para medir la velocidad de proyectiles
-        - Consiste en un proyectil que impacta un péndulo masivo
-        - La colisión es perfectamente inelástica (proyectil se incrusta)
-        
-        **2. Física del Proceso:**
-        - **Fase 1:** Colisión inelástica (conservación de momentum)
-        - **Fase 2:** Movimiento pendular (conservación de energía)
-        
-        **3. Ecuaciones Fundamentales:**
-        
-        **Fase de Colisión (Conservación de Momentum):**
-        - Antes: `p_inicial = m_proyectil × v_proyectil`
-        - Después: `p_final = (m_proyectil + m_péndulo) × v_conjunto`
-        - `m₁v₁ = (m₁ + m₂)v'`
-        
-        **Fase Pendular (Conservación de Energía):**
-        - Energía cinética → Energía potencial
-        - `½(m₁ + m₂)v'² = (m₁ + m₂)gh`
-        - `v' = √(2gh)`
-        
-        **4. Altura Máxima:**
-        - `h = L(1 - cos θ)` donde L = longitud del péndulo
-        - θ = ángulo máximo de oscilación
-        
-        **5. Velocidad del Proyectil:**
-        - Combinando las ecuaciones:
-        - `v₁ = ((m₁ + m₂)/m₁) × √(2gh)`
-        - `v₁ = ((m₁ + m₂)/m₁) × √(2gL(1 - cos θ))`
-        
-        **6. Ventajas del Método:**
-        - No requiere cronómetros de alta precisión
-        - Solo necesita medir masa, longitud y ángulo
-        - Muy preciso para proyectiles de alta velocidad
-        
-        **7. Aplicaciones Históricas:**
-        - Medición de velocidad de balas de cañón
-        - Determinación de propiedades balísticas
-        - Estudios de física experimental del siglo XVIII-XIX
-        
-        **8. Limitaciones:**
-        - Solo funciona si el proyectil se incrusta (colisión inelástica)
-        - Pérdidas de energía por fricción y deformación
-        - Efectos de rotación no considerados en el modelo simple
-        """)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Parámetros del Sistema")
+    # Parámetros en la barra lateral
+    with st.sidebar:
+        st.markdown("---")
+        st.subheader("⚙️ Parámetros del Sistema")
         
         # Parámetros del proyectil
         m_proyectil = st.number_input("Masa del proyectil (kg)", value=0.01, min_value=0.001, step=0.001, format="%.3f")
@@ -1170,43 +1349,56 @@ elif simulacion == "Péndulo Balístico":
             # Calcular velocidad original del proyectil
             v_proyectil = v_conjunto * (m_proyectil + m_pendulo) / m_proyectil
     
-    with col2:
-        st.subheader("Resultados del Análisis")
+    # Explicación física completa
+    with st.expander("📚 Explicación Física - Péndulo Balístico", expanded=True):
+        st.markdown("""
+        ### 🔬 Fundamentos Teóricos - Péndulo Balístico
         
-        # Mostrar resultados principales
-        st.metric("Velocidad del proyectil", f"{v_proyectil:.1f} m/s")
-        st.metric("Velocidad después colisión", f"{v_conjunto:.3f} m/s")
-        st.metric("Altura máxima", f"{h_max:.3f} m")
-        st.metric("Ángulo máximo", f"{theta_max_grados:.1f}°")
+        **1. Concepto del Péndulo Balístico:**
+        - Dispositivo usado para medir la velocidad de proyectiles
+        - Consiste en un proyectil que impacta un péndulo masivo
+        - La colisión es perfectamente inelástica (proyectil se incrusta)
         
-        # Análisis energético
-        # Energía cinética inicial del proyectil
-        E_cin_inicial = 0.5 * m_proyectil * v_proyectil**2
+        **2. Física del Proceso:**
+        - **Fase 1:** Colisión inelástica (conservación de momentum)
+        - **Fase 2:** Movimiento pendular (conservación de energía)
         
-        # Energía cinética después de la colisión
-        E_cin_despues = 0.5 * (m_proyectil + m_pendulo) * v_conjunto**2
+        **3. Ecuaciones Fundamentales:**
         
-        # Energía potencial máxima
-        E_pot_max = (m_proyectil + m_pendulo) * g * h_max
+        **Fase de Colisión (Conservación de Momentum):**
+        - Antes: `p_inicial = m_proyectil × v_proyectil`
+        - Después: `p_final = (m_proyectil + m_péndulo) × v_conjunto`
+        - `m₁v₁ = (m₁ + m₂)v'`
         
-        # Energía perdida en la colisión
-        E_perdida = E_cin_inicial - E_cin_despues
+        **Fase Pendular (Conservación de Energía):**
+        - Energía cinética → Energía potencial
+        - `½(m₁ + m₂)v'² = (m₁ + m₂)gh`
+        - `v' = √(2gh)`
         
-        st.markdown("### Análisis Energético")
-        st.metric("Energía inicial", f"{E_cin_inicial:.2f} J")
-        st.metric("Energía después colisión", f"{E_cin_despues:.2f} J")
-        st.metric("Energía perdida", f"{E_perdida:.2f} J", f"{(E_perdida/E_cin_inicial)*100:.1f}%")
+        **4. Altura Máxima:**
+        - `h = L(1 - cos θ)` donde L = longitud del péndulo
+        - θ = ángulo máximo de oscilación
         
-        # Verificaciones
-        error_energia = abs(E_cin_despues - E_pot_max)
-        if error_energia < 0.01:
-            st.success("✅ **Energía conservada en fase pendular**")
-        else:
-            st.warning(f"⚠️ **Error energético:** {error_energia:.3f} J")
+        **5. Velocidad del Proyectil:**
+        - Combinando las ecuaciones:
+        - `v₁ = ((m₁ + m₂)/m₁) × √(2gh)`
+        - `v₁ = ((m₁ + m₂)/m₁) × √(2gL(1 - cos θ))`
         
-        # Relación de masas
-        relacion_masas = (m_proyectil + m_pendulo) / m_proyectil
-        st.metric("Factor de amplificación", f"{relacion_masas:.2f}x")
+        **6. Ventajas del Método:**
+        - No requiere cronómetros de alta precisión
+        - Solo necesita medir masa, longitud y ángulo
+        - Muy preciso para proyectiles de alta velocidad
+        
+        **7. Aplicaciones Históricas:**
+        - Medición de velocidad de balas de cañón
+        - Determinación de propiedades balísticas
+        - Estudios de física experimental del siglo XVIII-XIX
+        
+        **8. Limitaciones:**
+        - Solo funciona si el proyectil se incrusta (colisión inelástica)
+        - Pérdidas de energía por fricción y deformación
+        - Efectos de rotación no considerados en el modelo simple
+        """)
     
     # Crear visualización animada del péndulo balístico
     st.subheader("🎬 Animación del Péndulo Balístico")
@@ -1273,7 +1465,7 @@ elif simulacion == "Péndulo Balístico":
                 x=[x_proyectil] if t <= 1.0 else [],
                 y=[y_proyectil] if t <= 1.0 else [],
                 mode='markers',
-                marker=dict(size=8, color='red'),
+                marker=dict(size=20, color='red'),
                 name='Proyectil',
                 showlegend=False
             )
@@ -1289,7 +1481,7 @@ elif simulacion == "Péndulo Balístico":
             go.Scatter(x=[0], y=[-L_pendulo], mode='markers', 
                       marker=dict(size=20, color='blue'), name='Péndulo'),
             go.Scatter(x=[-2], y=[-1], mode='markers', 
-                      marker=dict(size=8, color='red'), name='Proyectil')
+                      marker=dict(size=20, color='red'), name='Proyectil')
         ],
         frames=frames
     )                         
@@ -1337,10 +1529,68 @@ elif simulacion == "Péndulo Balístico":
     
     st.plotly_chart(fig, use_container_width=True)
     
-    # Gráficos de análisis
-    col3, col4 = st.columns(2)
+    # ========== SECCIÓN DE RESULTADOS EN DOS COLUMNAS ==========
+    st.subheader("📊 Resultados del Análisis")
     
-    with col3:
+    # Calcular todas las energías necesarias
+    # Energía cinética inicial del proyectil
+    E_cin_inicial = 0.5 * m_proyectil * v_proyectil**2
+    
+    # Energía cinética después de la colisión
+    E_cin_despues = 0.5 * (m_proyectil + m_pendulo) * v_conjunto**2
+    
+    # Energía potencial máxima
+    E_pot_max = (m_proyectil + m_pendulo) * g * h_max
+    
+    # Energía perdida en la colisión
+    E_perdida = E_cin_inicial - E_cin_despues
+    
+    # Relación de masas
+    relacion_masas = (m_proyectil + m_pendulo) / m_proyectil
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🎯 Resultados Principales")
+        
+        # Mostrar resultados principales
+        st.metric("Velocidad del proyectil", f"{v_proyectil:.1f} m/s")
+        st.metric("Velocidad después colisión", f"{v_conjunto:.3f} m/s")
+        st.metric("Altura máxima", f"{h_max:.3f} m")
+        st.metric("Ángulo máximo", f"{theta_max_grados:.1f}°")
+        
+        # Verificaciones
+        error_energia = abs(E_cin_despues - E_pot_max)
+        if error_energia < 0.01:
+            st.success("✅ **Energía conservada en fase pendular**")
+        else:
+            st.warning(f"⚠️ **Error energético:** {error_energia:.3f} J")
+        
+        # Relación de masas
+        st.metric("Factor de amplificación", f"{relacion_masas:.2f}x")
+    
+    with col2:
+        st.markdown("### ⚡ Análisis Energético")
+        
+        st.metric("Energía inicial", f"{E_cin_inicial:.2f} J")
+        st.metric("Energía después colisión", f"{E_cin_despues:.2f} J")
+        st.metric("Energía perdida", f"{E_perdida:.2f} J", 
+                 delta=f"{(E_perdida/E_cin_inicial)*100:.1f}%")
+        
+        # Información adicional sobre eficiencia
+        eficiencia = (E_cin_despues / E_cin_inicial) * 100
+        st.metric("Eficiencia de transferencia", f"{eficiencia:.1f}%")
+        
+        # Período de oscilación
+        periodo = 2 * np.pi * np.sqrt(L_pendulo / g)
+        st.metric("Período de oscilación", f"{periodo:.2f} s")
+    
+    # ========== GRÁFICAS DEBAJO EN DOS COLUMNAS ==========
+    st.markdown("---")  # Separador visual
+    
+    col_graf1, col_graf2 = st.columns(2)
+    
+    with col_graf1:
         st.subheader("📊 Energía vs Tiempo")
         
         # Crear gráfico de energía
@@ -1398,15 +1648,21 @@ elif simulacion == "Péndulo Balístico":
                              annotation_text="Impacto")
         
         fig_energia.update_layout(
-            title="Análisis Energético",
+            title="Análisis Energético del Sistema",
             xaxis_title="Tiempo (s)",
             yaxis_title="Energía (J)",
-            height=350
+            height=400,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=0.01
+            )
         )
         
         st.plotly_chart(fig_energia, use_container_width=True)
     
-    with col4:
+    with col_graf2:
         st.subheader("📈 Ángulo vs Tiempo")
         
         # Gráfico del ángulo de oscilación
@@ -1437,7 +1693,17 @@ elif simulacion == "Péndulo Balístico":
             title="Oscilación del Péndulo",
             xaxis_title="Tiempo (s)",
             yaxis_title="Ángulo (grados)",
-            height=350
+            height=400,
+            annotations=[
+                dict(
+                    x=3.5, y=theta_max_grados*0.7,
+                    text=f"Amplitud inicial: {theta_max_grados:.1f}°<br>Período: {periodo:.2f}s",
+                    showarrow=False,
+                    bgcolor="rgba(255,255,255,0.8)",
+                    bordercolor="purple",
+                    borderwidth=1
+                )
+            ]
         )
         
         st.plotly_chart(fig_angulo, use_container_width=True)
@@ -1507,4 +1773,3 @@ elif simulacion == "Péndulo Balístico":
     
     df_metodos = pd.DataFrame(metodos_data)
     st.dataframe(df_metodos, use_container_width=True)
-   
